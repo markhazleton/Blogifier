@@ -1,13 +1,13 @@
-﻿@inject IDataService DataService
+﻿@using Askmethat.Aspnet.JsonLocalizer.Localizer
+@inject IDataService DataService
+@inject IJsonStringLocalizer<ListModel> Localizer
 @{
     AppSettings.SiteRoot = Url.Content("~/");
     var img = $"{AppSettings.SiteRoot}themes/philosophy/images";
     PostModel postModel = (PostModel)Model;
     string cover = $"{Url.Content("~/")}{postModel.Post.Cover}";
     var catUrl = Url.Content("~/categories");
-    string socialLinks = "links";
-
-    var cats = string.IsNullOrEmpty(postModel.Post.Categories) 
+    var cats = string.IsNullOrEmpty(postModel.Post.Categories)
         ? null : postModel.Post.Categories.Split(',').ToList();
 }
 <!DOCTYPE html>
@@ -16,9 +16,6 @@
     <!--- basic page needs
     ================================================== -->
     <meta charset="utf-8">
-    <title>@postModel.Post.Title - @postModel.Blog.Title</title>
-    <meta name="description" content="@postModel.Post.Description">
-    <meta name="author" content="@postModel.Post.Author.DisplayName">
     <!-- mobile specific metas
     ================================================== -->
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
@@ -35,6 +32,8 @@
     ================================================== -->
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
+
+    <partial name="~/Views/Shared/HeaderScript.cshtml" />
 </head>
 
 <body id="top">
@@ -84,7 +83,7 @@
                 @if (cats != null)
                 {
                     <p class="s-content__tags">
-                        <span>Post Tags</span>
+                        <span>@Localizer["tag", true]</span>
 
                         <span class="s-content__tag-list">
                             @foreach (var cat in cats)
@@ -108,7 +107,10 @@
                         </p>
 
                         <ul class="s-content__author-social">
-                            <partial name="~/Views/Themes/Philosophy/Shared/Socials.cshtml" model="socialLinks" />
+                            @foreach (var field in postModel.Post.SocialFields)
+                            {
+                            <li><a href="@field.Content">@field.Title</a></li>
+                            }
                         </ul>
                     </div>
                 </div>
@@ -121,7 +123,7 @@
                             {
                                 <div class="s-content__prev">
                                     <a href="@postModel.Older.Slug" rel="prev">
-                                        <span>Previous Post</span>
+                                        <span>@Localizer["previous"]</span>
                                         @postModel.Older.Title
                                     </a>
                                 </div>
@@ -130,7 +132,7 @@
                             {
                                 <div class="s-content__next">
                                     <a href="@postModel.Newer.Slug" rel="next">
-                                        <span>Next Post</span>
+                                        <span>@Localizer["next"]</span>
                                         @postModel.Newer.Title
                                     </a>
                                 </div>
@@ -150,7 +152,6 @@
             <div id="comments" class="row">
                 <div class="col-full">
                     <div id="disqus_thread"></div>
-                    @Html.Raw(postModel.Disqus)
                 </div>
             </div>
         </div>

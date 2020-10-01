@@ -2,6 +2,7 @@
 using Blogifier.Core.Data;
 using Blogifier.Core.Helpers;
 using Blogifier.Core.Services;
+using Blogifier.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -43,11 +44,14 @@ namespace Blogifier.Controllers
 
             if (string.IsNullOrEmpty(term))
             {
-                model.Posts = await DataService.BlogPosts.GetList(p => p.Published > DateTime.MinValue, pgr);
+                if(blog.IncludeFeatured)
+                    model.Posts = await DataService.BlogPosts.GetList(pgr, 0, "", "FP");
+                else
+                    model.Posts = await DataService.BlogPosts.GetList(pgr, 0, "", "P");
             }
             else
             {
-                model.Posts = await DataService.BlogPosts.Search(pgr, term);
+                model.Posts = await DataService.BlogPosts.Search(pgr, term, 0, "FP");
             }
 
             if (pgr.ShowOlder) pgr.LinkToOlder = $"blog?page={pgr.Older}";
@@ -99,10 +103,16 @@ namespace Blogifier.Controllers
             {
                 ViewBag.Slug = slug;
                 var model = await DataService.BlogPosts.GetModel(slug);
+
+                // If unpublished and unauthorised redirect to error / 404.
+                if (model.Post.Published == DateTime.MinValue && !User.Identity.IsAuthenticated)
+                {
+                    return Redirect("~/error");
+                }
+
                 model.Blog = await DataService.CustomFields.GetBlogSettings();
                 model.Post.Description = model.Post.Description.MdToHtml();
                 model.Post.Content = model.Post.Content.MdToHtml();
-                model.Disqus = DataService.CustomFields.GetCustomValue("disqus-key");
 
                 return View($"~/Views/Themes/{model.Blog.Theme}/Post.cshtml", model);
             }
